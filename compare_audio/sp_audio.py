@@ -2,7 +2,7 @@ import numpy as np
 import scipy as sp
 from scipy.io.wavfile import read  
 import matplotlib.pyplot as plt
-from scipy.sparse.sputils import validateaxis
+from scipy import signal
 import sklearn.metrics.pairwise as metrics
 
 import os.path as ops
@@ -12,13 +12,35 @@ def val_paths(fpath, spath):
     assert ops.exists(fpath), '{} file does not exist.'.format(fpath)
     assert ops.exists(spath), '{} file does not exist.'.format(spath)
 
+def rm_bg_noise(array, freq):
+    b, a = signal.butter(5, 1000/(freq/2), btype = 'highpass')
+
+    filtered_signal = signal.lfilter(b, a, array)
+    plt.plot(filtered_signal)  
+    plt.title('Highpass Filter')  
+    plt.xlabel('Frequency(Hz)')  
+    plt.ylabel('Amplitude')
+    plt.show()
+
+    c, d = signal.butter(5, 380/(freq/2), btype = 'lowpass')
+    filtered_signal = signal.lfilter(c, d, filtered_signal)
+    plt.plot(filtered_signal)
+    plt.title('Lowpass Filter')  
+    plt.xlabel('Frequency(Hz)')  
+    plt.ylabel('Amplitude')
+    plt.show()
+
+    return filtered_signal
+
 def load_audio(fpath, spath):
     val_paths(fpath, spath)
 
     (Frequency1, array1) = read(fpath)
     (Frequency2, array2) = read(spath)
 
-    return array1, array2
+    filtered_array2 = rm_bg_noise(array2, Frequency2)
+
+    return array1, filtered_array2
 
 def plot_waveform(array1, array2):
 
